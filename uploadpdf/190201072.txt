@@ -1,0 +1,1248 @@
+<?php
+
+include 'config.php';
+
+error_reporting(0);
+
+session_start();
+
+
+
+if (isset($_POST['submit'])) {
+	$username = $_POST['username'];
+	$email = $_POST['email'];
+	$password = ($_POST['password']);
+	$cpassword = ($_POST['cpassword']);
+
+	if ($password == $cpassword) {
+		$sql = "SELECT * FROM users WHERE email='$email'";
+		$result = mysqli_query($conn, $sql);
+		if (!$result->num_rows > 0) {
+			$sql = "INSERT INTO users (username, email, password)
+					VALUES ('$username', '$email', '$password')";
+			$result = mysqli_query($conn, $sql);
+			if ($result) {
+				echo "<script>alert('User Registration Completed.')</script>";
+				$username = "";
+				$email = "";
+				$_POST['password'] = "";
+				$_POST['cpassword'] = "";
+			} else {
+				echo "<script>alert('Something Wrong Went.')</script>";
+			}
+		} else {
+			echo "<script>alert('Email Already Exists.')</script>";
+		}
+	} else {
+		echo "<script>alert('Password Not Matched.')</script>";
+	}
+}
+
+?>
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<link rel="stylesheet" type="text/css" href="style.css">
+
+	<title>Register Form</title>
+</head>
+
+<body>
+	<div class="container">
+		<form action="" method="POST" class="login-email">
+			<div class="input-group">
+				<input type="text" placeholder="Username" name="username" value="<?php echo $username; ?>" required>
+			</div>
+			<div class="input-group">
+				<input type="email" placeholder="Email" name="email" value="<?php echo $email; ?>" required>
+			</div>
+			<div class="input-group">
+				<input type="password" placeholder="Password" name="password" value="<?php echo $_POST['password']; ?>" required>
+			</div>
+			<div class="input-group">
+				<input type="password" placeholder="Confirm Password" name="cpassword" value="<?php echo $_POST['cpassword']; ?>" required>
+			</div>
+			<div class="input-group">
+				<button name="submit" class="btn">Add New User</button>
+			</div>
+			<p class="login-register-text"> <a href="admin_page.php">Turn admin page</a></p>
+		</form>
+	</div>
+</body>
+
+</html>
+<?php
+
+session_start();
+
+
+include "conn.php";
+
+
+
+if (isset($_GET['delete_user'])) {
+    $sqldelete_user = "DELETE FROM `users` WHERE `users`.`id` = ?";
+    $querydelete_user = $conn->prepare($sqldelete_user);
+    $querydelete_user->execute([
+        $_GET['delete_user']
+    ]);
+
+    header('Location:admin_page.php');
+}
+if (isset($_GET['delete_pdf'])) {
+    $sqldelete_pdf = "DELETE FROM `uploaded_files` WHERE `uploaded_files`.`id` = ?";
+    $querydelete_pdf = $conn->prepare($sqldelete_pdf);
+    $querydelete_pdf->execute([
+        $_GET['delete_pdf']
+    ]);
+
+    header('Location:admin_page.php');
+}
+
+
+
+$sql = "SELECT * FROM users";
+$query = $conn->prepare($sql);
+$query->execute();
+
+$sql2 = "SELECT * FROM uploaded_files";
+$query2 = $conn->prepare($sql2);
+$query2->execute();
+
+
+?>
+
+
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+</head>
+
+<body>
+
+    <header>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h1 class="display-1 text-center">Admin Panel</h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="btn-group">
+                        <a href="admin_page.php" class="btn btn-outline-primary">All Users and Documents</a>
+                        <a href="add_user.php" class="btn btn-outline-primary">Add User</a>
+                        <a href="search.php" class="btn btn-outline-primary">Search Form</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </header>
+    <main>
+        <div class="container">
+            <div class="row mt-4">
+                <div class="col">
+                    <table class="table table-hover table-dark table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Password</th>
+                                <th>Email</th>
+                                <th>Process</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($line = $query->fetch(PDO::FETCH_ASSOC)) { ?>
+                                <tr>
+                                    <td><?= $line['id'] ?></td>
+                                    <td><?= $line['username'] ?></td>
+                                    <td><?= $line['password'] ?></td>
+                                    <td><?= $line['email'] ?></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="update.php?id=<?= $line['id'] ?>" class="btn btn-secondary">Update</a>
+                                            <a href="?delete_user=<?= $line['id'] ?>" onclick="return confirm('Are you sure you want to delete user?')" class="btn btn-danger">Delete</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php } ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="row mt-4">
+                <div class="col">
+                    <table class="table table-hover table-dark table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Documents</th>
+                                <th>UserID</th>
+                                <th>Process</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($line = $query2->fetch(PDO::FETCH_ASSOC)) { ?>
+                                <tr>
+                                    <td><?= $line['id'] ?></td>
+                                    <td><?= $line['name'] ?></td>
+                                    <td><?= $line['userid'] ?></td>
+
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="?delete_pdf=<?= $line['id'] ?>" onclick="return confirm('Are you sure you want to delete document ?')" class="btn btn-danger">Delete</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php } ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+    <footer></footer>
+    <a href="logout.php"><b>Logout</b> </a>
+</body>
+
+</html>
+<?php
+
+include 'config.php';
+
+session_start();
+
+error_reporting(0);
+
+if (isset($_SESSION['username'])) {
+	header("Location: admin_page.php");
+}
+
+
+if (isset($_POST['submit'])) {
+	$email = $_POST['email'];
+	$password = md5($_POST['password']);
+
+	$sql = "SELECT * FROM admin_login WHERE email='$email' AND password='$password'";
+	$result = mysqli_query($conn, $sql);
+	if ($result->num_rows > 0) {
+		$row = mysqli_fetch_assoc($result);
+		$_SESSION['username'] = $row['username'];
+		header("Location: admin_page.php");
+	} else {
+		echo "<script>alert('Woops! Email or Password is Wrong.')</script>";
+	}
+}
+
+?>
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<link href="style.css" rel="stylesheet" type="text/css" />
+
+	<title>Admin Form </title>
+</head>
+
+<body>
+	<div class="container">
+
+		<form action="" method="POST" class="login-email">
+			<div class="input-group">
+				<input type="email" placeholder="Email" name="email" value="<?php echo $email; ?>" required>
+			</div>
+			<div class="input-group">
+				<input type="password" placeholder="Password" name="password" value="<?php echo $_POST['password']; ?>" required>
+			</div>
+			<div class="input-group">
+				<button name="submit" class="btn">Login</button>
+				<a href="logout.php"><b>Logout</b> </a>
+
+
+			</div>
+		</form>
+	</div>
+</body>
+
+</html>
+<?php 
+
+$server = "localhost";
+$dbuser = "root";
+$dbpass = "";
+$database = "file_upload_tutorial";
+
+
+$conn = mysqli_connect($server, $dbuser, $dbpass, $database);
+
+if (!$conn) {
+    die("<script>alert('Connection Failed.')</script>");
+}
+
+$base_url = "http://localhost/yazlab3/"; // Website url
+
+
+?>
+<?php
+
+$dsn = 'mysql:dbname=file_upload_tutorial;host=127.0.0.1';
+$user = 'root';
+$password = '';
+
+try {
+    $conn = new PDO($dsn, $user, $password);
+} catch (PDOException $e) {
+    echo 'Bağlantı kurulamadı: ' . $e->getMessage();
+}
+<?php 
+
+include 'config.php';
+
+session_start();
+
+error_reporting(0);
+
+if (isset($_SESSION['username'])) {
+    header("Location: upload_pdf.php");
+}
+
+if (isset($_POST['submit'])) {
+	$email = $_POST['email'];
+	$password = ($_POST['password']);
+
+	$sql = "SELECT * FROM users WHERE email='$email' AND password='$password'";
+	$result = mysqli_query($conn, $sql);
+	if ($result->num_rows > 0) {
+		$row = mysqli_fetch_assoc($result);
+		$_SESSION['username'] = $row['username'];
+		header("Location: upload_pdf.php");
+	} else {
+		echo "<script>alert('Woops! Email or Password is Wrong.')</script>";
+	}
+	
+}
+
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<link href="style.css" rel="stylesheet" type="text/css"/>
+
+	<title>Login Form </title>
+</head>
+<body>
+	<div class="container">
+		<form action="" method="POST" class="login-email">
+			<div class="input-group">
+				<input type="email" placeholder="Email" name="email" value="<?php echo $email; ?>" required>
+			</div>
+			<div class="input-group">
+				<input type="password" placeholder="Password" name="password" value="<?php echo $_POST['password']; ?>" required>
+			</div>
+			<div class="input-group">
+				<button name="submit" class="btn">Login</button>
+			</div>
+			<p class="login-register-text">Don't have an account? <a href="register.php">Register Here</a>.</p>
+			<p class="login-register-text">Are you admin? <a href="admin.php">Login Here</a>.</p>
+
+		</form>
+	</div>
+</body>
+</html>
+<?php
+
+session_start();
+session_destroy();
+
+header("Location: index.php");
+
+<?php 
+
+include 'config.php';
+
+error_reporting(0);
+
+session_start();
+
+if (isset($_SESSION['username'])) {
+    header("Location: index.php");
+}
+
+if (isset($_POST['submit'])) {
+	$username = $_POST['username'];
+	$email = $_POST['email'];
+	$password = ($_POST['password']);
+	$cpassword = ($_POST['cpassword']);
+
+	if ($password == $cpassword) {
+		$sql = "SELECT * FROM users WHERE email='$email'";
+		$result = mysqli_query($conn, $sql);
+		if (!$result->num_rows > 0) {
+			$sql = "INSERT INTO users (username, email, password)
+					VALUES ('$username', '$email', '$password')";
+			$result = mysqli_query($conn, $sql);
+			if ($result) {
+				echo "<script>alert('User Registration Completed.')</script>";
+				$username = "";
+				$email = "";
+				$_POST['password'] = "";
+				$_POST['cpassword'] = "";
+			} else {
+				echo "<script>alert('Something Wrong Went.')</script>";
+			}
+		} else {
+			echo "<script>alert('Email Already Exists.')</script>";
+		}
+		
+	} else {
+		echo "<script>alert('Password Not Matched.')</script>";
+	}
+}
+
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<link rel="stylesheet" type="text/css" href="style.css">
+
+	<title>Register Form</title>
+</head>
+<body>
+	<div class="container">
+		<form action="" method="POST" class="login-email">
+			<div class="input-group">
+				<input type="text" placeholder="Username" name="username" value="<?php echo $username; ?>" required>
+			</div>
+			<div class="input-group">
+				<input type="email" placeholder="Email" name="email" value="<?php echo $email; ?>" required>
+			</div>
+			<div class="input-group">
+				<input type="password" placeholder="Password" name="password" value="<?php echo $_POST['password']; ?>" required>
+            </div>
+            <div class="input-group">
+				<input type="password" placeholder="Confirm Password" name="cpassword" value="<?php echo $_POST['cpassword']; ?>" required>
+			</div>
+			<div class="input-group">
+				<button name="submit" class="btn">Register</button>
+			</div>
+			<p class="login-register-text"> <a href="index.php">Login Here</a>.</p>
+		</form>
+	</div>
+</body>
+</html>
+<?php
+
+include("vendor/autoload.php");
+
+
+
+$search = '';
+
+if (isset($_POST['submit'])) {
+    $search = $_POST['search'];
+
+
+    $mydir = 'uploads';
+    $myfiles = scandir($mydir);
+    //print_r($myfiles);
+    //die;
+    $total_pdf = count($myfiles);
+    //die;
+    $i = 2;
+    while ($i < $total_pdf) {
+        $file    =  "uploads/" . $myfiles[$i];
+
+
+        $directory = getcwd();
+        $pdf = $file;
+        $fullfile = $directory . '/' . $pdf;
+        $content = '';
+        $out = '';
+        $data = '';
+        $parser = new \Smalot\PdfParser\Parser();
+
+        $document = $parser->parseFile($fullfile);
+        $pages    = $document->getPages();
+        $j = 0;
+        for ($j; $j < sizeof($pages); $j++) {
+            $page     = $pages[$j];
+            $data  = $page->getText();
+            $out      = $data;
+            //echo  $data;
+            if (strpos($data, $search) !== false) {
+                //echo $search;
+                echo "Found on:-<a target='_blank' href='$file'> $file</a> page $j";
+                echo "<br>";
+                if ($search == 'ÖZET') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[1]<br>";
+                }
+                if ($search == 'Anahtar') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[2]<br>";
+                }
+                if ($search == 'KONU') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[5]<br>";
+                }
+                if ($search == 'DÖNEM') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[2]<br>";
+                }
+                if ($search == 'TEZ') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[3]<br>";
+                }
+                if ($search == 'BÖLÜM') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[1]<br>";
+                }
+                if ($search == 'Danışman') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[0]<br>";
+                }
+                if ($search == 'Jüri') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[0]<br>";
+                }
+                if ($search == 'Öğrenciler') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[2]<br>";
+                }
+                if ($search == 'BİTİRME') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[3]<br>";
+                }
+                if ($search == 'ARAŞTIRMA') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[3]<br>";
+                }
+                if ($search == 'Tarih') {
+                    $temp = explode("||", $data);
+                    echo  "$temp[1]<br>";
+                }
+            } else {
+                //echo "No match found on:-<a target='_blank' href='$file'> $file</a> page $j";
+                echo "<br>";
+            }
+        }
+
+        $i++;
+    }
+}
+?>
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h1 class="display-1 text-center">Search From Uploaded PDF</h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="btn-group">
+                        <a href="admin_page.php" class="btn btn-outline-primary"> All Users and Documents</a>
+                        <a href="add_user.php" class="btn btn-outline-primary">Add User</a>
+                        <a href="search.php" class="btn btn-outline-primary">Search Form</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <form action="" method="POST" class="row mt-4 g-3">
+            <div class="col-6">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" class="form-control" name="search" value="<?php echo $search; ?>" required>
+            </div>
+            <button name="submit" class="btn btn-primary">SEARCH</button>
+        </form>
+    </main>
+    <footer></footer>
+</body>
+
+</html>
+<?php
+
+include "conn.php";
+
+
+if (isset($_POST['update'])) {
+
+    $sql = "UPDATE `users` 
+        SET `username` = ?, 
+            `email` = ?, 
+            `password` = ? WHERE `users`.`id` = ?";
+
+    $array = [
+        $_POST['username'],
+        $_POST['email'],
+        $_POST['password'],
+        $_POST['id']
+    ];
+    $query = $conn->prepare($sql);
+    $query->execute($array);
+
+    header("Location:admin_page.php");
+}
+
+$sql = "SELECT * FROM users WHERE id = ?";
+$query = $conn->prepare($sql);
+$query->execute([
+    $_GET['id']
+]);
+$line = $query->fetch(PDO::FETCH_ASSOC);
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Update</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+</head>
+
+<body>
+
+    <header>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h1 class="display-1 text-center">Update Users</h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="btn-group">
+                        <a href="admin_page.php" class="btn btn-outline-primary"> All Users and Documents</a>
+                        <a href="add_user.php" class="btn btn-outline-primary">Add User</a>
+                        <a href="search.php" class="btn btn-outline-primary">Search Form</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <form action="" method="post" class="row mt-4 g-3">
+                <input type="hidden" name="id" value="<?= $line['id'] ?>">
+                <div class="col-6">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" name="username"" value=" <?= $line['username'] ?>">
+                </div>
+                <div class="col-6">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="text" class="form-control" name="email" value="<?= $line['email'] ?>">
+                </div>
+                <div class="col-6">
+                    <label for="passsword" class="form-label">Password</label>
+                    <input type="password" class="form-control" name="password" value="<?= $line['password'] ?>">
+                </div>
+
+                <button name="update" class="btn btn-primary">Update</button>
+            </form>
+        </div>
+    </main>
+    <footer></footer>
+</body>
+
+</html>
+<?php
+
+session_start();
+
+if (!isset($_SESSION['username'])) {
+	header("Location: index.php");
+}
+
+include 'config.php';
+$userid = '';
+
+$deneme = $_SESSION['username'];
+
+$sql = "SELECT id FROM users WHERE username= '$deneme '";
+$result = mysqli_query($conn, $sql);
+if ($result->num_rows > 0) {
+	while ($row = $result->fetch_assoc()) {
+
+		$userid = $row["id"];
+	}
+}
+
+
+if (isset($_POST['upload'])) {
+	$location = "uploads/";
+	$file_new_name = $_FILES["file"]["name"];
+	$file_name = $_FILES["file"]["name"];
+	$file_temp = $_FILES["file"]["tmp_name"];
+	$file_size = $_FILES["file"]["size"];
+
+
+	if ($file_size > 20485760) {
+		echo "<script>alert(' File size is so big.')</script>";
+	} else {
+		$sql = "INSERT INTO uploaded_files (name, new_name,userid)
+			VALUES ('$file_name', '$file_new_name', '$userid')";
+		$result = mysqli_query($conn, $sql);
+
+		if ($result) {
+			move_uploaded_file($file_temp, $location . $file_new_name);
+			echo "<script>alert('File uploaded successfully.')</script>";
+		} else {
+			echo "<script>alert('You can not upload this file.')</script>";
+		}
+	}
+}
+
+?>
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" type="text/css" href="style.css">
+
+	<title>Upload File</title>
+</head>
+
+<body>
+	<div class="file__upload">
+		<div class="header">
+			<p><i class="fa fa-cloud-upload fa-2x"></i><span><span>Up</span>load File</span></p>
+		</div>
+		<form action="" method="POST" enctype="multipart/form-data" class="body">
+
+
+
+			<input type="file" name="file" id="upload" required>
+			<label for="upload">
+				<i class="fa fa-file-text-o fa-3x"></i>
+				<p>
+
+					<span>BROWSE</span> to upload a file
+				</p>
+			</label>
+			<p class="login-register-text"> <a href="user_files.php">Click here to see your files.</a>.</p>
+			<button name="upload" class="btn">Upload</button>
+		</form>
+	</div>
+	<?php echo "<h1>Welcome " . $_SESSION['username'] . "</h1>"; ?>
+
+	<a href="logout.php"><b>Logout</b> </a>
+</body>
+
+</html>
+<?php
+
+session_start();
+
+
+include "conn.php";
+
+
+
+
+
+if (isset($_GET['delete_pdf'])) {
+    $sqldelete_doc = "DELETE FROM `uploaded_files` WHERE `uploaded_files`.`id` = ?";
+    $querydelete_doc = $conn->prepare($sqldelete_doc);
+    $querydelete_doc->execute([
+        $_GET['delete_pdf']
+    ]);
+
+    header('Location:user_files.php');
+}
+
+
+$userid = ' ';
+$deneme = $_SESSION['username'];
+$query = $conn->query("SELECT id FROM users WHERE username= '$deneme '", PDO::FETCH_ASSOC);
+if ($query->rowCount()) {
+    foreach ($query as $row) {
+        $userid = $row['id'];
+    }
+}
+
+
+$sql2 = "SELECT * FROM uploaded_files WHERE userid = $userid";
+$query2 = $conn->prepare($sql2);
+$query2->execute();
+
+
+
+?>
+
+
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Panel</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+</head>
+
+<body>
+
+    <header>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h1 class="display-1 text-center">User Panel</h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="btn-group">
+                        <a href="user_files.php" class="btn btn-outline-primary">Documents you have uploaded </a>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </header>
+    <main>
+        <div class="container">
+            <div class="row mt-4">
+
+            </div>
+        </div>
+        <div class="container">
+            <div class="row mt-4">
+                <div class="col">
+                    <table class="table table-hover table-dark table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Documents</th>
+                                <th>UserID</th>
+                                <th>Process</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($line = $query2->fetch(PDO::FETCH_ASSOC)) { ?>
+                                <tr>
+                                    <td><?= $line['id'] ?></td>
+                                    <td><?= $line['name'] ?></td>
+                                    <td><?= $line['userid'] ?></td>
+
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="?delete_pdf=<?= $line['id'] ?>" onclick="return confirm('Are you sure you want to delete document ?')" class="btn btn-danger">Delete</a>
+                                        </div>
+
+                                    </td>
+                                   
+                                </tr>
+                            <?php } ?>
+                            <p class="login-register-text"> <a href="upload_pdf.php">Go back to upload page.</a>.</p>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+    <footer></footer>
+    <a href="logout.php"><b>Logout</b> </a>
+</body>
+
+</html>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    width: 100%;
+    min-height: 100vh;
+    background: #1f221f;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.file__upload {
+    width: 500px;
+    height: 445px;
+    margin: 30px;
+    box-shadow: 0 0 6px rgba(82, 39, 39, 0.5);
+}
+
+.file__upload .header {
+    width: 100%;
+    height: 145px;
+    background: #1f5033;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px 5px 0 0;
+}
+
+.file__upload .header p {
+    color: #FFF;
+}
+
+.file__upload .header p i.fa {
+    margin-right: 10px;
+}
+
+.file__upload .header p span {
+    font-size: 2rem;
+    font-weight: 300;
+}
+
+.file__upload .header p span span {
+    font-weight: 300;
+}
+
+.file__upload .body {
+    background: rgb(109, 136, 118);
+    width: 100%;
+    height: calc(100%);
+    border-radius: 0 0 5px 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.file__upload .body input[type="file"] {
+    opacity: 0;
+}
+
+.file__upload .body i.fa {
+    color: #d3d3d3;
+    margin-bottom: 20px;
+}
+
+.file__upload .body p strong {
+    color: 1f5033;
+}
+
+.file__upload .body p span {
+    color: #1f5033;
+    text-decoration: underline;
+}
+
+.btn {
+    background: #1f5033;
+    border: none;
+    outline: none;
+    margin: 20px 0;
+    padding: .7rem 2rem;
+    font-size: 1.3rem;
+    color: #FFF;
+    border-radius: 3px;
+    opacity: .8;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.btn:hover {
+    opacity: 1;
+}
+
+
+.container {
+    width: 1000px;
+    min-height: 4px;
+    background: rgb(76, 92, 81);
+    border-radius: 5px;
+    box-shadow: 0 0 6px rgba(82, 39, 39, 0.5);
+    padding: 40px 30px;
+}
+
+.container .login-text {
+    color: #111;
+    font-weight: 500;
+    font-size: 1.1rem;
+    text-align: center;
+    margin-bottom: 20px;
+    display: block;
+    text-transform: capitalize;
+}
+
+.container .login-social {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(50%, 1fr));
+    margin-bottom: 25px;
+}
+
+.container .login-social a {
+    padding: 12px;
+    margin: 10px;
+    border-radius: 3px;
+    box-shadow: 0 0 5px rgba(0,0,0,.3);
+    text-decoration: none;
+    font-size: 1rem;
+    text-align: center;
+    color: #FFF;
+    transition: .3s;
+}
+
+
+
+.container .login-email .input-group {
+    width: 100%;
+    height: 50px;
+    margin-bottom: 25px;
+}
+
+
+.container .login-email .input-group input {
+    width: 100%;
+    height: 100%;
+    border: 2px solid #e7e7e7;
+    padding: 15px 20px;
+    font-size: 1rem;
+    border-radius: 30px;
+    background: transparent;
+    outline: none;
+    transition: .3s;
+}
+
+
+.container .login-email .input-group input:focus, .container .login-email .input-group input:valid {
+    border-color: #1f5033;
+}
+
+
+
+.container .login-email .input-group .btn {
+    display: block;
+    width: 100%;
+    padding: 15px 20px;
+    text-align: center;
+    border: none;
+    background: #1f5033;
+    outline: none;
+    border-radius: 30px;
+    font-size: 1.2rem;
+    color: #FFF;
+    cursor: pointer;
+    transition: .3s;
+}
+
+
+.container .login-email .input-group .btn:hover {
+    transform: translateY(-5px);
+    background: #1f5033;
+}
+
+.login-register-text {
+    color: #111;
+    font-weight: 600;
+}
+
+.login-register-text a {
+    text-decoration: none;
+    color: #68af84;
+}
+
+@media (max-width: 430px) {
+    .container {
+        width: 300px;
+    }
+    .container .login-social {
+        display: block;
+    }
+    .container .login-social a {
+        display: block;
+    }
+}
+body {
+    font-size: 19px;
+}
+table{
+    width: 50%;
+    margin: 30px auto;
+    border-collapse: collapse;
+    text-align: left;
+}
+tr {
+    border-bottom: 1px solid #cbcbcb;
+}
+th, td{
+    border: none;
+    height: 30px;
+    padding: 2px;
+}
+tr:hover {
+    background: #F5F5F5;
+}
+
+form {
+    width: 45%;
+    margin: 50px auto;
+    text-align: left;
+    padding: 20px; 
+    border: 1px solid #bbbbbb; 
+    border-radius: 5px;
+}
+
+.input-group {
+    margin: 10px 0px 10px 0px;
+}
+.input-group label {
+    display: block;
+    text-align: left;
+    margin: 3px;
+}
+.input-group input {
+    height: 30px;
+    width: 93%;
+    padding: 5px 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid gray;
+}
+.btn {
+    padding: 10px;
+    font-size: 15px;
+    color: white;
+    background: #5F9EA0;
+    border: none;
+    border-radius: 5px;
+}
+.edit_btn {
+    text-decoration: none;
+    padding: 2px 5px;
+    background: #2E8B57;
+    color: white;
+    border-radius: 3px;
+}
+
+.del_btn {
+    text-decoration: none;
+    padding: 2px 5px;
+    color: white;
+    border-radius: 3px;
+    background: #800000;
+}
+.msg {
+    margin: 30px auto; 
+    padding: 10px; 
+    border-radius: 5px; 
+    color: #3c763d; 
+    background: #dff0d8; 
+    border: 1px solid #3c763d;
+    width: 50%;
+    text-align: center;
+}
+ PHP Version: 7.4.3
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+
+CREATE TABLE `uploaded_files` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `new_name` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+INSERT INTO `uploaded_files` (`id`, `name`, `new_name`) VALUES
+
+
+
+ALTER TABLE `uploaded_files`
+  ADD PRIMARY KEY (`id`);
+
+
+ALTER TABLE `uploaded_files`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+COMMIT;
+
+
+
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+INSERT INTO `users` (`id`, `username`, `email`, `password`) VALUES
+
+
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`);
+
+
+
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+COMMIT;
+
